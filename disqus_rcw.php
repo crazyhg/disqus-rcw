@@ -3,7 +3,7 @@
  * Plugin Name: Disqus Recent Comments (async)
  * Description: Widget to show recent comments from Disqus API.
  * Author: hg
- * Version: 1.0.0
+ * Version: 1.1.0
  */
 
 class Disqus_RCW extends WP_Widget
@@ -19,12 +19,16 @@ class Disqus_RCW extends WP_Widget
 
         add_action('wp_ajax_nopriv_load_recent_comments', array($this, 'load_recent_comments_callback'));
         add_action('wp_ajax_load_recent_comments', array($this, 'load_recent_comments_callback'));
-        wp_enqueue_style('disqus-rcw', plugins_url('disqus_rcw.css', __FILE__));
     }
 
     public function widget($args, $instance)
     {
         set_default_values($instance);
+
+        if ($instance['css_enabled']) {
+            wp_enqueue_style('dashicons');
+            wp_enqueue_style('disqus-rcw', plugins_url('disqus_rcw.css', __FILE__));
+        }
 
         if ($instance['livestamp_timeout'] > 0) {
             wp_register_script('moment.js', '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.2/moment.min.js', array(), '2.11.2');
@@ -39,13 +43,19 @@ class Disqus_RCW extends WP_Widget
         echo esc_html($instance['title']);
         echo $args['after_title'];
 
-        echo '<ul class="disqus-rcw-list dsq-widget-list" data-widget-idbase="'.$this->id_base.'" data-widget-number="'.$this->number.'">';
+        if ($instance['show_update_button']) {
+            echo '<button class="disqus-rcw-update">';
+            echo '<i class="disqus-rcw-update-icon dashicons-before dashicons-update"></i>';
+            echo __('Update');
+            echo '</button>';
+        }
+
+        echo '<ul class="disqus-rcw-list dsq-widget-list" data-widget-number="'.$this->number.'">';
 
         if ($instance['ajax_enabled']) {
             wp_enqueue_script('disqus-rcw', plugins_url('disqus_rcw.js', __FILE__), array('jquery'));
             wp_localize_script('disqus-rcw', 'localizedData', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'id_base' => $this->id_base,
                 'livestamp_timeout' => $instance['livestamp_timeout'],
             ));
         } else {
@@ -71,6 +81,8 @@ class Disqus_RCW extends WP_Widget
         $instance['cache_timeout'] = (int) $new_instance['cache_timeout'];
         $instance['livestamp_timeout'] = (int) $new_instance['livestamp_timeout'];
         $instance['ajax_enabled'] = (bool) $new_instance['ajax_enabled'];
+        $instance['show_update_button'] = (bool) $new_instance['show_update_button'];
+        $instance['css_enabled'] = (bool) $new_instance['css_enabled'];
 
         return $instance;
     }
@@ -136,7 +148,23 @@ class Disqus_RCW extends WP_Widget
                value="true" type="checkbox" />
         <label for="<?= $this->get_field_id('ajax_enabled') ?>"><?= 'Asyncronous loading' ?></label>
         </p>
-        
+
+        <p>
+        <input id="<?= $this->get_field_id('show_update_button') ?>"
+               name="<?= $this->get_field_name('show_update_button') ?>"
+                <?php checked($instance[ 'show_update_button' ]) ?>
+               value="true" type="checkbox" />
+        <label for="<?= $this->get_field_id('show_update_button') ?>"><?= 'Show update button' ?></label>
+        </p>
+
+        <p>
+        <input id="<?= $this->get_field_id('css_enabled') ?>"
+               name="<?= $this->get_field_name('css_enabled') ?>"
+                <?php checked($instance[ 'css_enabled' ]) ?>
+               value="true" type="checkbox" />
+        <label for="<?= $this->get_field_id('css_enabled') ?>"><?= 'Use widget CSS' ?></label>
+        </p>
+
         <p>
         <label for="<?= $this->get_field_id('api_key') ?>"><?='Api key:' ?></label>
         <input id="<?= $this->get_field_id('api_key') ?>"
@@ -312,6 +340,8 @@ function set_default_values(&$instance)
         'cache_timeout' => 30,
         'livestamp_timeout' => 30,
         'ajax_enabled' => true,
+        'show_update_button' => true,
+        'css_enabled' => true,
         'api_key' => '',
         'forum_name' => '',
         'request_comment_limit' => 100,

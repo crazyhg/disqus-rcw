@@ -1,3 +1,39 @@
+.disqus-rcw-update {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 10px 7px;
+    line-height: 20px;
+
+    background-color: #777;
+    cursor: pointer;
+    outline: none;
+    border: none;
+
+    color: #fff;
+    font-family: "Droid Sans", arial, sans-serif;
+}
+.disqus-rcw-update:hover {
+    background-color: #009bc2;
+}
+.disqus-rcw-update:active, .disqus-rcw-update:disabled {
+    background-color: #0080a0;
+}
+
+.disqus-rcw-update-icon {
+    margin-right: 5px;
+}
+.disqus-rcw-update:disabled .disqus-rcw-update-icon:before {
+    -webkit-animation: spin .5s ease-in-out infinite;
+    animation: spin .5s ease-in-out infinite;
+}
+@keyframes spin {
+    100% {
+        -webkit-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
 /* Disqus widget style */
 .dsq-widget ul.dsq-widget-list {
     padding: 0;
