@@ -26,6 +26,13 @@ class Disqus_RCW extends WP_Widget
     {
         set_default_values($instance);
 
+        if ($instance['livestamp_timeout'] > 0) {
+            wp_register_script('moment.js', '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.2/moment.min.js', array(), '2.11.2');
+            wp_register_script('moment.js-it', '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.2/locale/it.js', array('moment.js'), '2.11.2');
+            wp_register_script('livestamp', '//cdnjs.cloudflare.com/ajax/libs/livestamp/1.1.2/livestamp.min.js', array('jquery', 'moment.js-it'), '1.1.2');
+            wp_enqueue_script('livestamp');
+        }
+
         echo $args['before_widget'];
 
         echo $args['before_title'];
@@ -39,6 +46,7 @@ class Disqus_RCW extends WP_Widget
             wp_localize_script('disqus-rcw', 'localizedData', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'id_base' => $this->id_base,
+                'livestamp_timeout' => $instance['livestamp_timeout'],
             ));
         } else {
             $this->output_widget_content($instance);
@@ -61,7 +69,8 @@ class Disqus_RCW extends WP_Widget
         $instance['request_comment_limit'] = (int) $new_instance['request_comment_limit'];
         $instance['comments_per_thread'] = (int) $new_instance['comments_per_thread'];
         $instance['cache_timeout'] = (int) $new_instance['cache_timeout'];
-        $instance['ajax_enabled'] = (bool) strip_tags($new_instance['ajax_enabled']);
+        $instance['livestamp_timeout'] = (int) $new_instance['livestamp_timeout'];
+        $instance['ajax_enabled'] = (bool) $new_instance['ajax_enabled'];
 
         return $instance;
     }
@@ -109,6 +118,14 @@ class Disqus_RCW extends WP_Widget
         <input id="<?= $this->get_field_id('cache_timeout') ?>"
                name="<?= $this->get_field_name('cache_timeout') ?>"
                value="<?= esc_attr($cache_timeout) ?>"
+               type="number" min="0" class="widefat" />
+        </p>
+
+        <p>
+        <label for="<?= $this->get_field_id('livestamp_timeout') ?>"><?= 'Livestamp timeout <small>in seconds, 0 to disable livestamp</small>' ?></label>
+        <input id="<?= $this->get_field_id('livestamp_timeout') ?>"
+               name="<?= $this->get_field_name('livestamp_timeout') ?>"
+               value="<?= esc_attr($livestamp_timeout) ?>"
                type="number" min="0" class="widefat" />
         </p>
 
@@ -219,6 +236,8 @@ function get_last_comments($disqus_params, $comments_per_thread, $comment_limit,
             }
         }
 
+        $timestamp = strtotime($comment['createdAt']);
+
         $newcomment = array(
             'author_name' => $comment['author']['name'],
             'author_url' => $comment['author']['profileUrl'],
@@ -226,7 +245,9 @@ function get_last_comments($disqus_params, $comments_per_thread, $comment_limit,
             'thread_name' => $comment['thread']['title'],
             'thread_url' => $comment['thread']['link'],
             'message' => truncate($comment['raw_message'], $comment_length),
-            'timestamp' => time_elapsed_string($comment['createdAt']),
+            'timestamp' => $timestamp,
+            'time' => date('H:i', $timestamp),
+            'datetime' => date('d/m/Y H:i:s', $timestamp),
             'comment_url' => $comment['thread']['link'].'#comment-'.$comment['id'],
         );
 
@@ -276,7 +297,7 @@ function output_comment($comment)
     echo '<span class="dsq-widget-comment"><p>'.esc_html($message).'</p></span>';
     echo '<p class="dsq-widget-meta">';
     echo '<a href="'.esc_url($thread_url).'">'.esc_html($thread_name).'</a> ·&nbsp;';
-    echo '<a href="'.esc_url($comment_url).'">'.esc_html($timestamp).'</a>';
+    echo '<a href="'.esc_url($comment_url).'" data-livestamp="'.esc_attr($timestamp).'" title="'.esc_attr($datetime).'">'.esc_html($time).'</a>';
     echo '</p>';
     echo '</li>';
 }
@@ -289,6 +310,7 @@ function set_default_values(&$instance)
         'comment_length' => 300,
         'comments_per_thread' => 1,
         'cache_timeout' => 30,
+        'livestamp_timeout' => 30,
         'ajax_enabled' => true,
         'api_key' => '',
         'forum_name' => '',
