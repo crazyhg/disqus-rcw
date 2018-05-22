@@ -269,7 +269,7 @@ function get_last_comments($disqus_params, $comments_per_thread, $comment_limit,
         $newcomment = array(
             'author_name' => $comment['author']['name'],
             'author_url' => $comment['author']['profileUrl'],
-            'author_avatar' => $comment['author']['avatar']['large']['permalink'],
+            'author_avatar' => $comment['author']['avatar']['large']['cache'],
             'thread_name' => $comment['thread']['title'],
             'thread_url' => $comment['thread']['link'],
             'message' => truncate($comment['raw_message'], $comment_length),
@@ -296,7 +296,7 @@ function get_last_comments($disqus_params, $comments_per_thread, $comment_limit,
 
 function query_disqus_api($disqus_params)
 {
-    $url = add_query_arg($disqus_params, 'http://disqus.com/api/3.0/posts/list.json');
+    $url = add_query_arg($disqus_params, 'https://disqus.com/api/3.0/posts/list.json');
 
     $response = wp_remote_get($url);
 
